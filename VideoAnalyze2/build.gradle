@@ -22,6 +22,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url "https://mvn.0110.be/releases" }
 }
 
 
@@ -41,6 +42,12 @@ dependencies {
     // oauth
     implementation 'com.google.auth:google-auth-library-oauth2-http:1.23.0'
     implementation 'com.google.api:api-common:2.13.0'
+
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.bytedeco:javacv-platform:1.5.10'
+    implementation 'be.tarsos.dsp:core:2.5'
+    implementation 'be.tarsos.dsp:jvm:2.5'
+    implementation 'com.google.cloud:google-cloud-texttospeech:2.6.0'
 }
 
 tasks.named('test') {

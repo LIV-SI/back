@@ -52,6 +52,6 @@ gemini:
 
 google:
   cloud:
-    key: C:/Users/inwoo/Desktop/LikeLion/hackathon-468101-631195897b27.json
+    key: classpath:TTS_Key/google-tts-key.json
 
 

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
+import hello.videoanalyze2.mascot.model.SceneData;
+import hello.videoanalyze2.mascot.service.VideoGenerationService;
 import hello.videoanalyze2.request.GeminiReqDto;
 import hello.videoanalyze2.response.GeminiResDto;
 import hello.videoanalyze2.response.VideoResult;
@@ -50,7 +52,7 @@ public class VideoService {
     ObjectMapper objectMapper = new ObjectMapper();
 
 
-    public void analyze(MultipartFile video, String sigunguEnglish, String voicePack) throws IOException, InterruptedException {
+    public void analyze(MultipartFile video, String sigunguEnglish, String voicePack) throws Exception {
         // api 요청용 토큰
 //        String accessToken = getAccessToken(serviceAccountPath);
 

@@ -30,7 +30,7 @@ public class VideoController {
 
     @PostMapping("/video-analyze")
     public String analyze(@RequestParam MultipartFile video,
-           @RequestParam String sigunguEnglish, @RequestParam String voicePack) throws IOException, InterruptedException {
+           @RequestParam String sigunguEnglish, @RequestParam String voicePack) throws Exception {
 
         videoService.analyze(video, sigunguEnglish, voicePack);
         return "ok";
