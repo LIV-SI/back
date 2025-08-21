@@ -1,10 +1,10 @@
-package com.example.livsi_be;
+package hello.videoanalyze2;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class LivSiBeApplicationTests {
+class VideoAnalyze2ApplicationTests {
 
     @Test
     void contextLoads() {
