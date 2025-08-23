@@ -9,6 +9,11 @@ public class ChromakeyMergeService {
 
     public void mergeAnimationWithBakcgroundVideo(String BGVFolder, String MASCOTAFolder, String outputVideoPath) throws Exception {
 
+        File outputDir = new File("Video");
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();  // 디렉토리 없으면 생성
+        }
+
         String filter =
                 "[1:v]colorkey=0x00FF00:0.1:0.1,format=yuva420p[fg];" +
                         "[fg]scale=320:-1[fg_scaled];" +

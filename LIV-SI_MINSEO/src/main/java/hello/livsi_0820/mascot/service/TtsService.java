@@ -36,7 +36,7 @@ public class TtsService {
 
             SynthesizeSpeechResponse response = client.synthesizeSpeech(input, voice, audioConfig);
 
-            File audioDir = new File("audio");
+            File audioDir = new File("Audio");
             if (!audioDir.exists()) {
                 boolean created = audioDir.mkdirs();
                 if (!created) {

@@ -13,6 +13,12 @@ public class VideoMergeService {
         File frameDir = new File(framesFolder);
         if (!frameDir.exists()) frameDir.mkdirs();
 
+        File outputDir = new File("Animation");
+        if (!outputDir.exists()) {
+            outputDir.mkdirs();  // 디렉토리 없으면 생성
+        }
+
+
         String[] command = {
                 "ffmpeg", "-y",
                 "-framerate", "30",
