@@ -3,7 +3,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/livsi
     username: root
-    password: "0409"
+    password: "0000"
 
   jpa:
     hibernate:
@@ -19,9 +19,9 @@ spring:
 
 aws:
   s3:
-    bucket: minseotest0409
+    bucket: S3 버킷 이름
   credentials:
-  access-key-id: ${AWS_ACCESS_KEY_ID}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+    accessKey: aws IAM 사용자에서 키 생성해서 나오는 ID
+    secretKey: " 시크릿 ID
   region:
     static: ap-northeast-2

@@ -21,13 +21,12 @@ public class VideoController {
 
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<Video> uploadVideo(@RequestPart("videoFile") MultipartFile videoFile,
-                                             @RequestPart("thumbnailFile") MultipartFile thumbnailFile,
                                              @RequestPart("video") String videoJsonString) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             Video video = objectMapper.readValue(videoJsonString, Video.class);
 
-            Video savedVideo = videoService.saveVideo(videoFile, thumbnailFile, video);
+            Video savedVideo = videoService.saveVideo(videoFile, video);
             return new ResponseEntity<>(savedVideo, HttpStatus.CREATED);
         } catch (IOException e) {
             e.printStackTrace();

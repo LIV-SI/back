@@ -36,7 +36,7 @@ public class VideoService {
     private String bucketName;
 
     @Transactional
-    public Video saveVideo(MultipartFile videoFile, MultipartFile thumbnailFile, Video video) throws IOException {
+    public Video saveVideo(MultipartFile videoFile, Video video) throws IOException {
 
         String originalFilename = videoFile.getOriginalFilename();
         String fileExtension = "";
@@ -63,31 +63,6 @@ public class VideoService {
 
         String videoUrl = amazonS3.generatePresignedUrl(generatePresignedUrlRequest).toString();
         video.setVideoUrl(videoUrl);
-
-        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-
-            String thumbOriginalFilename = thumbnailFile.getOriginalFilename();
-            String thumbExtension = "";
-            if (thumbOriginalFilename != null && thumbOriginalFilename.contains(".")) {
-                thumbExtension = thumbOriginalFilename.substring(thumbOriginalFilename.lastIndexOf("."));
-            }
-            String thumbFileName = "thumbnails/" + UUID.randomUUID() + thumbExtension;
-
-            ObjectMetadata thumbMetadata = new ObjectMetadata();
-            thumbMetadata.setContentLength(thumbnailFile.getSize());
-            thumbMetadata.setContentType(thumbnailFile.getContentType());
-
-            amazonS3.putObject(bucketName, thumbFileName, thumbnailFile.getInputStream(), thumbMetadata);
-
-            Date thumbExpiration = new Date();
-            thumbExpiration.setTime(thumbExpiration.getTime() + 1000 * 60 * 60); // 1시간 유효
-            GeneratePresignedUrlRequest thumbRequest = new GeneratePresignedUrlRequest(bucketName, thumbFileName)
-                    .withMethod(HttpMethod.GET)
-                    .withExpiration(thumbExpiration);
-
-            String thumbnailUrl = amazonS3.generatePresignedUrl(thumbRequest).toString();
-            video.setThumbnailUrl(thumbnailUrl);
-        }
 
         Member memberRequest = video.getMember();
         if (memberRequest == null || memberRequest.getEmail() == null) {
