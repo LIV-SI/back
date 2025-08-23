@@ -16,18 +16,6 @@ public class VideoController {
 
     private final VideoService videoService;
 
-    @PostMapping("/")
-    public String home() {
-        Client client = new Client();
-
-        GenerateContentResponse response =
-                client.models.generateContent(
-                        "gemini-2.5-flash",
-                        "Explain how AI works in a few words",
-                        null);
-        return response.text();
-    }
-
     @PostMapping("/video-analyze")
     public String analyze(@RequestParam MultipartFile video,
            @RequestParam String sigunguEnglish, @RequestParam String voicePack) throws Exception {

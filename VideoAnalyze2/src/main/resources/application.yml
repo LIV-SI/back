@@ -12,39 +12,8 @@ gemini:
     "해당 영상을 짜깁기 해서 맛집 홍보 쇼츠 영상을 만들려고 해 영상 시나리오를 만들어줘
     총 30초 정도의 영상 분량이 나오게 해줘
     1) JSON 형식으로 응답해줘
-    <출력 예시> {"concept": "죽이 아플 때만 먹는 음식이라고? 편견을 깨부수는 세상의 모든 죽이 여기에!", "scenes":[{"sceneNumber":1, "originalTimestamp":"0:15", "content": "이런 죽 본 적 있어?"},{"sceneNumber": 2,"originalTimestamp":"0:08-0:10","content": "속 편한 보양죽부터 든든한 식사죽까지"},{sceneNumber": 3, "originalTimestamp": "0:05", "content": "정기운 백련죽집"}, {"sceneNumber": 4,"originalTimestamp": "0:13-0:14", "content": "달콤한 전통죽과 수제 디저트는 기본!"}, {"sceneNumber": 5, "originalTimestamp": "0:12", "content": "아니, 떡볶이랑 크로와상까지?"}, {"sceneNumber": 6,"originalTimestamp": "0:15-0:16", "content": "죽의 신세계가 궁금하다면? 정기운 백련죽집으로!"}]}
-    2) 2) "originalTimestamp":"a-b"라 하면 b가 무조건 존재하게 해줘
-#gemini:
-#  requestText: |
-#    <지시사항>
-#    당신은 30초 분량의 맛집 홍보용 숏폼 영상 시나리오를 제작하는 전문 마케팅 감독입니다.
-#    아래 지시사항에 따라 영상을 분석하고 시나리오를 JSON 형식으로 제작해 주세요.
-#
-#    1.  **영상 분석**: 먼저 영상을 전체적으로 분석하여 가게의 이름과 주력 메뉴가 무엇인지 파악합니다.
-#    2.  **'반전 포인트' 찾기**: 주력 메뉴와는 어울리지 않는 의외의 메뉴, 독특한 인테리어, 특별한 서비스 등 사람들의 흥미를 끌 만한 '반전 포인트'나 '차별점'을 반드시 하나 이상 찾아냅니다. 이것이 시나리오의 핵심 컨셉이 됩니다.
-#    3.  **시나리오 구성**: 찾아낸 '반전 포인트'를 중심으로 사람들의 궁금증을 유발하는 스토리라인을 구성합니다. 영상의 매력적인 장면들을 시간 순서에 얽매이지 않고 자유롭게 활용하여 5~6개의 장면으로 나누어 시나리오를 작성합니다.
-#    4.  **JSON 형식으로 출력**: 최종 결과물은 아래 <출력 예시>와 동일한 JSON 형식으로만 응답해야 합니다. 모든 키와 값의 형식을 정확히 지켜주세요.
-#    5.  **실패 처리**: 만약 영상을 분석하기 어렵거나, 시나리오로 만들 만한 특별한 포인트를 찾지 못했다면, 빈 응답 대신 concept 필드에 그 이유를 명확하게 서술해주세요.
-#    </지시사항>
-#
-#    <출력 예시>
-#    {"concept": "죽이 아플 때만 먹는 음식이라고? 편견을 깨부수는 세상의 모든 죽이 여기에!",  "scenes":[{"sceneNumber":1,    "originalTimestamp":"0:15", "content": "이런 죽 본 적 있어?"},{"sceneNumber": 2,"originalTimestamp":"0:08-0:10","content": "속 편한 보양죽부터 든든한 식사죽까지"},{sceneNumber": 3, "originalTimestamp": "0:05", "content": "정기운 백련죽집"}, {"sceneNumber": 4,"originalTimestamp": "0:13-0:14", "content": "달콤한 전통죽과 수제 디저트는 기본!"}, {"sceneNumber": 5, "originalTimestamp": "0:12", "content": "아니, 떡볶이랑 크로와상까지?"}, {"sceneNumber": 6,"originalTimestamp": "0:15-0:16", "content": "죽의 신세계가 궁금하다면? 정기운 백련죽집으로!"}]}
-
-#gemini:
-#  requestText: |
-#    <Role>
-#    당신은 요청에 대해 반드시 JSON 형식으로만 응답하는 시스템입니다.
-#    </Role>
-#    <Instructions>
-#    1. 당신은 30초 분량의 맛집 홍보용 숏폼 영상 시나리오를 제작하는 전문 마케팅 감독입니다.
-#    2. 영상 속 가게의 가장 큰 특징이나 '반전 매력'을 찾아내어 시나리오의 핵심 컨셉으로 잡아야 합니다.
-#    3. 시나리오는 반드시 한국어로 작성해야 합니다.
-#    4. 최종 응답은 오직 JSON 객체여야 합니다. JSON 앞뒤로 그 어떤 설명, 인사, 줄바꿈, 코드 블록 마크다운(```)도 포함해서는 안 됩니다.
-#    5. 응답은 반드시 '{' 문자로 시작해서 '}' 문자로 끝나야 합니다.
-#    6. 만약 분석이 불가능하다면, 아래 <Output Example>의 JSON 구조를 따르되 'concept' 필드에 한국어로 분석 실패 이유를 서술하세요.
-#    </Instructions>
-#    <Output Example>
-#      {"concept": "죽이 아플 때만 먹는 음식이라고? 편견을 깨부수는 세상의 모든 죽이 여기에!",  "scenes":[{"sceneNumber":1,    "originalTimestamp":"0:15", "content": "이런 죽 본 적 있어?"},{"sceneNumber": 2,"originalTimestamp":"0:08-0:10","content": "속 편한 보양죽부터 든든한 식사죽까지"}]}
+    <출력 예시> {"concept": "죽이 아플 때만 먹는 음식이라고? 편견을 깨부수는 세상의 모든 죽이 여기에!", "scenes":[{"sceneNumber":1, "originalTimestamp":"0:15-0:20", "content": "이런 죽 본 적 있어?"},{"sceneNumber": 2,"originalTimestamp":"0:08-0:13","content": "속 편한 보양죽부터 든든한 식사죽까지"},{sceneNumber": 3, "originalTimestamp": "0:05-0:10", "content": "정기운 백련죽집"}, {"sceneNumber": 4,"originalTimestamp": "0:13-0:18", "content": "달콤한 전통죽과 수제 디저트는 기본!"}, {"sceneNumber": 5, "originalTimestamp": "0:12-0:17", "content": "아니, 떡볶이랑 크로와상까지?"}, {"sceneNumber": 6,"originalTimestamp": "0:15-0:20", "content": "죽의 신세계가 궁금하다면? 정기운 백련죽집으로!"}]}
+    2) "originalTimestamp":"a-b"라 하면 b가 무조건 존재하게 해줘
 
 
   key: AIzaSyAzGqHSTpzr_MhZzdHEqkZDOgzzcahUSPU

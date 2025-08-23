@@ -3,13 +3,13 @@ package hello.videoanalyze2;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.auth.oauth2.GoogleCredentials;
 import hello.videoanalyze2.mascot.model.SceneData;
 import hello.videoanalyze2.mascot.service.VideoGenerationService;
 import hello.videoanalyze2.request.GeminiReqDto;
 import hello.videoanalyze2.response.GeminiResDto;
 import hello.videoanalyze2.response.VideoResult;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -36,16 +35,13 @@ public class VideoService {
     @Value("${gemini.requestText}")
     String requestText;
 
-    @Value("${google.cloud.key}")
-    String serviceAccountPath;
-
     // 최적화 : 스프링빈 등록 -> RestTemplate 싱글톤화
     private final RestTemplate restTemplate;
-    private final ShortsMaker shortsMaker;
+    private final ClipCutter clipCutter;
     private final VideoGenerationService videoGenerationService;
-    public VideoService(RestTemplate restTemplate,  ShortsMaker shortsMaker, VideoGenerationService videoGenerationService) {
+    public VideoService(RestTemplate restTemplate, ClipCutter clipCutter, VideoGenerationService videoGenerationService) {
         this.restTemplate = restTemplate;
-        this.shortsMaker = shortsMaker;
+        this.clipCutter = clipCutter;
         this.videoGenerationService = videoGenerationService;
     }
 
@@ -53,9 +49,6 @@ public class VideoService {
 
 
     public void analyze(MultipartFile video, String sigunguEnglish, String voicePack) throws Exception {
-        // api 요청용 토큰
-//        String accessToken = getAccessToken(serviceAccountPath);
-
         // temp 파일에 영상 저장
         File tempFile = File.createTempFile("upload-", UUID.randomUUID() + "");
         video.transferTo(tempFile);
@@ -68,16 +61,11 @@ public class VideoService {
         String geminiURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
                 + GEMINI_API_KEY;
         HttpHeaders headers = new HttpHeaders();
-//        headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-//        GenerationConfig config = GenerationConfig.builder()
-//                .temperature(0.3f)          // 창의성 낮춤 (0.2 ~ 0.5 추천)
-//                .maxOutputTokens(8192)      // 최대 출력 토큰 길이 (넉넉하게 설정)
-//                .build();
         GeminiReqDto request = GeminiReqDto.createVideoRequest("video/mp4", fileId, requestText);
 
-        // --- 디버깅 코드 추가 ---
+        // --- 로깅 코드 추가 ---
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             // request 객체를 JSON 문자열로 예쁘게 출력 (pretty print)
@@ -86,10 +74,10 @@ public class VideoService {
         } catch (Exception e) {
             log.error("JSON 변환 중 오류 발생", e);
         }
-        // --- 디버깅 코드 끝 ---
+        // --- 로깅 코드 끝 ---
+
         HttpEntity<GeminiReqDto> requestEntity = new HttpEntity<>(request, headers);
 
-        // do-while -> gemini가 response에 제대로 응답할 때까지 계속 질문
         ResponseEntity<GeminiResDto> response;
             response = restTemplate.exchange(
                     geminiURL,
@@ -97,26 +85,20 @@ public class VideoService {
                     requestEntity,
                     GeminiResDto.class
             );
-        log.info("response: {}", response);
-
         String jsonResult = response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
-        log.info("jsonResult={}", jsonResult);
 
-        // jsonResult의 백틱 제거
-        if (jsonResult.startsWith("```")) {
-            jsonResult = jsonResult.substring(jsonResult.indexOf("{"));
-        }
-        if (jsonResult.endsWith("```")) {
-            jsonResult = jsonResult.substring(0, jsonResult.lastIndexOf("}") + 1);
-        }        // 맨 뒤 ``` 제거
+        // JSON 형식으로 변환
+        jsonResult = convertJSON(jsonResult);
 
+        // --- 로깅 코드 추가 ---
         VideoResult videoResult = objectMapper.readValue(jsonResult, VideoResult.class);
         log.info("Concept: {}", videoResult.getConcept());
         for (VideoResult.Scene scene : videoResult.getScenes()) {
             log.info("Scene {}: {} [{}]", scene.getSceneNumber(), scene.getContent(), scene.getOriginalTimestamp());
         }
+        // --- 로깅 코드 끝 ---
 
-        List<File> clips = shortsMaker.makeShorts(tempFile, videoResult);
+        List<File> clips = clipCutter.makeShorts(tempFile, videoResult);
         List<String> contents = new ArrayList<>();
         for(VideoResult.Scene scene : videoResult.getScenes()) {
             contents.add(scene.getContent());
@@ -130,21 +112,26 @@ public class VideoService {
             sceneDataList.add(sceneData);
         }
 
+        // --- 로깅 코드 추가 ---
         for(SceneData sceneData : sceneDataList) {
             log.info("sceneData: {}",sceneData);
         }
+        // --- 로깅 코드 끝 ---
+
+        // 영상 분석 정보 + 사용자 입력 정보 토대로 최종 영상 생성
         videoGenerationService.generateMultiSceneVideo(sigunguEnglish, voicePack, sceneDataList);
     }
 
-    /**
-     * 서비스 계정 JSON으로 Access Token 발급
-     */
-    private String getAccessToken(String serviceAccountPath) throws IOException {
-        GoogleCredentials credentials = GoogleCredentials
-                .fromStream(new FileInputStream(serviceAccountPath))
-                .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-        credentials.refreshIfExpired();
-        return credentials.getAccessToken().getTokenValue();
+    @NotNull
+    private static String convertJSON(String jsonResult) {
+        // jsonResult의 백틱 제거
+        if (jsonResult.startsWith("```")) {
+            jsonResult = jsonResult.substring(jsonResult.indexOf("{"));
+        }
+        if (jsonResult.endsWith("```")) {
+            jsonResult = jsonResult.substring(0, jsonResult.lastIndexOf("}") + 1);
+        }        // 맨 뒤 ``` 제거
+        return jsonResult;
     }
 
     public String uploadFile(File file) throws IOException, InterruptedException {
@@ -152,7 +139,7 @@ public class VideoService {
                 +GEMINI_API_KEY;
 
 
-        // === 1. 업로드 세션 시작 ===
+        // 1. 업로드 세션 시작
         String startUrl = "https://generativelanguage.googleapis.com/upload/v1beta/files?key=" + GEMINI_API_KEY;
 
         HttpHeaders startHeaders = new HttpHeaders();
@@ -174,7 +161,7 @@ public class VideoService {
         String uploadUrl = startResponse.getHeaders().getFirst("X-Goog-Upload-URL");
         log.info("Upload session URL={}", uploadUrl);
 
-        // === 2. 실제 파일 업로드 ===
+        // 2. 실제 파일 업로드
         HttpHeaders uploadHeaders = new HttpHeaders();
         uploadHeaders.setContentType(MediaType.parseMediaType("video/mp4"));
         uploadHeaders.add("X-Goog-Upload-Command", "upload, finalize");
@@ -189,7 +176,7 @@ public class VideoService {
                 uploadRequest,
                 String.class
         );
-        // 업로드한 파일이 ACTIVE 상태가 될 때까지 기다리기
+        // 업로드한 파일이 ACTIVE 상태가 될 때까지 기다리기(최대 10초)
         waitUntilFileisActive(response);
 
         log.info("Upload response: {}", response.getBody());
