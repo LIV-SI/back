@@ -1,0 +1,64 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'hello'
+version = '0.0.1-SNAPSHOT'
+description = 'LIV-SI_MINSEO'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url "https://mvn.0110.be/releases" }
+}
+
+dependencies {
+	// Swagger
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.753'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+	// gemini
+	implementation "com.google.genai:google-genai:1.12.0"
+
+	// gcs
+	implementation "com.google.cloud:google-cloud-storage:2.38.0"
+
+	// oauth
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.23.0'
+	implementation 'com.google.api:api-common:2.13.0'
+
+	implementation 'com.google.code.gson:gson:2.11.0'
+	implementation 'org.bytedeco:javacv-platform:1.5.10'
+	implementation 'be.tarsos.dsp:core:2.5'
+	implementation 'be.tarsos.dsp:jvm:2.5'
+//   implementation 'com.googlecode.tarsosdsp:TarsosDSP:2.4'
+	implementation 'com.google.cloud:google-cloud-texttospeech:2.6.0'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
