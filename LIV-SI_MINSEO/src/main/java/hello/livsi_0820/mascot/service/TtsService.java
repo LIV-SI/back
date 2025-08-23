@@ -36,7 +36,15 @@ public class TtsService {
 
             SynthesizeSpeechResponse response = client.synthesizeSpeech(input, voice, audioConfig);
 
-            File wavFile = new File("audio/output.wav");
+            File audioDir = new File("audio");
+            if (!audioDir.exists()) {
+                boolean created = audioDir.mkdirs();
+                if (!created) {
+                    throw new RuntimeException("Failed to create audio directory: " + audioDir.getAbsolutePath());
+                }
+            }
+
+            File wavFile = new File(audioDir, "output.wav");
             try (FileOutputStream out = new FileOutputStream(wavFile)) {
                 out.write(response.getAudioContent().toByteArray());
             }
