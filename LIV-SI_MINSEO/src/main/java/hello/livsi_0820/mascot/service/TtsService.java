@@ -8,15 +8,27 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class TtsService {
     public TtsResult generateTts(String text, String voiceName) throws Exception {
         try (TextToSpeechClient client = TextToSpeechClient.create()) {
             SynthesisInput input = SynthesisInput.newBuilder().setText(text).build();
+
+            String modelName;
+
+            if ("남성".equalsIgnoreCase(voiceName)) {
+                modelName = "ko-KR-Chirp3-HD-Charon";
+            } else if ("여성".equalsIgnoreCase(voiceName)) {
+                modelName = "ko-KR-Chirp3-HD-Kore";
+            } else {
+                modelName = "ko-KR-Chirp3-HD-Kore"; // 기본값으로 여성을 설정
+            }
+
             VoiceSelectionParams voice = VoiceSelectionParams.newBuilder()
                     .setLanguageCode("ko-KR")
-                    .setName(voiceName)
+                    .setName(modelName)
                     .build();
             AudioConfig audioConfig = AudioConfig.newBuilder()
                     .setAudioEncoding(AudioEncoding.LINEAR16)

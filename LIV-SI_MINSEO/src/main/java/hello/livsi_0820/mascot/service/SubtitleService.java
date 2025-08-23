@@ -11,6 +11,8 @@ public class SubtitleService {
 
     private static final String FFMPEG_BIN = "ffmpeg";
 
+    private static final String FONT_PATH = "/usr/local/share/fonts/custom";
+
     public void addSubtitles(String videoPath, List<SpeechSegment> segments, String outputVideoPath) throws IOException, InterruptedException {
         // 1. SRT 파일 임시로 생성
         String srtFilePath = createSrtFile(segments);
@@ -25,10 +27,13 @@ public class SubtitleService {
         }
 
         // 3. subtitles 필터를 사용하는 FFMpeg 명령어 구성
+        String subtitleFilter = String.format("subtitles='%s':force_style='FontFile=%s,FontSize=18'",
+                escapedSrtPath, FONT_PATH);
+
         List<String> command = List.of(
                 FFMPEG_BIN, "-y",
                 "-i", input,
-                "-vf", "subtitles='" + escapedSrtPath + "'",
+                "-vf", subtitleFilter,
                 "-c:a", "copy",
                 out
         );
