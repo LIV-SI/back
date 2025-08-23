@@ -21,6 +21,6 @@ gemini:
 
 google:
   cloud:
-    key: classpath:TTS_Key/google-tts-key.json
+    key: ${GOOGLE_APPLICATION_CREDENTIALS}
 
 
