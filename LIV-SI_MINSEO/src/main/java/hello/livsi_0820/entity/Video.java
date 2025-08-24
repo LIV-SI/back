@@ -24,7 +24,7 @@ public class Video {
     @Column(nullable = true, length = 200)
     private String description;
 
-    @Column(name = "video_url", nullable = false, length = 255)
+    @Column(name = "video_url", nullable = false, length = 500)
     private String videoUrl;
 
     @Column(name = "thumbnail_url", nullable = true, length = 255)

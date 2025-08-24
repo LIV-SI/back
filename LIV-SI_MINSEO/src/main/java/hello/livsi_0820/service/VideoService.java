@@ -57,8 +57,8 @@ public class VideoService {
     @Value("${gemini.requestText}")
     String requestText;
 
-    @Value("${google.cloud.key}")
-    String serviceAccountPath;
+//    @Value("${google.cloud.key}")
+//    String serviceAccountPath;
 
     // 최적화 : 스프링빈 등록 -> RestTemplate 싱글톤화
     private final RestTemplate restTemplate;
