@@ -7,6 +7,7 @@ import hello.livsi_0820.service.VideoService;
 import hello.livsi_0820.status.JobStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -79,7 +80,7 @@ public class VideoController {
     }
 
 
-    @PostMapping("/video-analyze/")
+    @PostMapping(value = "/video-analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "영상 생성 요청 접수", description = "영상 제작을 요청하고 작업 ID를 즉시 반환합니다.")
     public ResponseEntity<Map<String, String>> requestAnalyze(
             @RequestParam MultipartFile video,
