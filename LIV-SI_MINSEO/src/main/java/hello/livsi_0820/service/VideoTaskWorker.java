@@ -62,13 +62,15 @@ public class VideoTaskWorker {
 
             // 디버깅용 요청 본문 로그
             try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                // request 객체를 JSON 문자열로 예쁘게 출력 (pretty print)
                 String jsonRequest = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(request);
-                log.info("Job ID [{}] - 실제 전송될 JSON 요청 본문:\n{}", jobId, jsonRequest);
+                log.info("실제 전송될 JSON 요청 본문:\n{}", jsonRequest);
             } catch (Exception e) {
-                log.error("Job ID [{}] - JSON 변환 중 오류 발생", jobId, e);
+                log.error("JSON 변환 중 오류 발생", e);
             }
-
             HttpEntity<GeminiReqDto> requestEntity = new HttpEntity<>(request, headers);
+
             ResponseEntity<GeminiResDto> response = restTemplate.exchange(geminiURL, HttpMethod.POST, requestEntity, GeminiResDto.class);
             log.info("Job ID [{}] - Gemini 응답 수신", jobId);
 
