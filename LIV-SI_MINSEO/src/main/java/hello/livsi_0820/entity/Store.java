@@ -18,7 +18,7 @@ public class Store {
     @Column(name = "store_id")
     private Long storeId;
 
-    @Column(name = "store_name", nullable = false, length = 100)
+    @Column(name = "store_name", nullable = true, length = 100)
     private String storeName;
 
     @JsonIgnore

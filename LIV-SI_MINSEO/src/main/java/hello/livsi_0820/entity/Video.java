@@ -15,7 +15,7 @@ public class Video {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "video_id")
+    @Column(name = "video_id", nullable = true)
     private Long videoId;
 
     @Column(nullable = true, length = 100)
@@ -39,10 +39,10 @@ public class Video {
     private Region region;
 
     @ManyToOne
-    @JoinColumn(name = "member_id", nullable = false)
+    @JoinColumn(name = "member_id", nullable = true)
     private Member member;
 
     @ManyToOne
-    @JoinColumn(name = "store_id", nullable = false)
+    @JoinColumn(name = "store_id", nullable = true)
     private Store store;
 }
