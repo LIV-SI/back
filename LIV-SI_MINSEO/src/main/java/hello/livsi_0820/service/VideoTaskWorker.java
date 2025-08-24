@@ -10,6 +10,9 @@ import hello.livsi_0820.entity.Job;
 import hello.livsi_0820.mascot.model.SceneData;
 import hello.livsi_0820.mascot.service.VideoGenerationService;
 import hello.livsi_0820.repository.JobRepository;
+import hello.livsi_0820.repository.MemberRepository;
+import hello.livsi_0820.repository.StoreRepository;
+import hello.livsi_0820.repository.VideoRepository;
 import hello.livsi_0820.request.GeminiReqDto;
 import hello.livsi_0820.response.GeminiResDto;
 import hello.livsi_0820.response.VideoResult;
@@ -22,12 +25,16 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import hello.livsi_0820.entity.*;
+import hello.livsi_0820.repository.*;
+import org.springframework.http.*;
+import java.io.FileInputStream;
 
 @Slf4j
 @Component
@@ -35,11 +42,15 @@ import java.util.List;
 public class VideoTaskWorker {
 
     private final JobRepository jobRepository;
+    private final VideoRepository videoRepository;
+    private final MemberRepository memberRepository;
+    private final StoreRepository storeRepository;
+    private final RegionService regionService;
+    private final AmazonS3 amazonS3;
     private final RestTemplate restTemplate;
     private final ShortsMaker shortsMaker;
     private final VideoGenerationService videoGenerationService;
     private final ObjectMapper objectMapper;
-    private final AmazonS3 amazonS3;
 
     @Value("${gemini.key}")
     private String GEMINI_API_KEY;
@@ -51,7 +62,7 @@ public class VideoTaskWorker {
     private String bucketName;
     @Async
     @Transactional
-    public void analyze(String jobId, File tempFile, String sigunguEnglish, String voicePack) {
+    public void analyze(String jobId, File tempFile,  Video videoInfo,String sigunguEnglish, String voicePack) {
         try {
             log.info("Job ID [{}] - 실제 비동기 작업 시작...", jobId);
 
@@ -109,22 +120,47 @@ public class VideoTaskWorker {
 
             File finalVideoFile = videoGenerationService.generateMultiSceneVideo(sigunguEnglish, voicePack, sceneDataList);
 
-            // 5. 성공 처리
 
-            log.info("Job ID [{}] - 최종 영상을 S3에 업로드 시작...", jobId);
+            String fileName = "videos/" + jobId + ".mp4";
 
-            String s3FileName = "videos/" + jobId + ".mp4";
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentLength(finalVideoFile.length());
+            metadata.setContentType("video/mp4");
 
-            amazonS3.putObject(bucketName, s3FileName, finalVideoFile);
+            // 생성된 최종 영상 파일을 S3에 업로드
+            amazonS3.putObject(bucketName, fileName, new FileInputStream(finalVideoFile), metadata);
 
-            String finalVideoUrl = amazonS3.getUrl(bucketName, s3FileName).toString();
-            log.info("Job ID [{}] - S3 업로드 완료. URL: {}", jobId, finalVideoUrl);
+            String videoUrl = amazonS3.getUrl(bucketName, fileName).toString();
+            videoInfo.setVideoUrl(videoUrl); // 전달받은 videoInfo 객체에 최종 URL 설정
 
-            Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
+            // --- 이하 기존 saveVideo의 DB 저장 로직과 동일 ---
+            Member memberRequest = videoInfo.getMember();
+            Member member = memberRepository.findByEmail(memberRequest.getEmail())
+                    .orElseGet(() -> memberRepository.save(memberRequest));
+            videoInfo.setMember(member);
+
+            Region region = regionService.findBySidoAndSigungu(videoInfo.getSido(), videoInfo.getSigungu())
+                    .orElseGet(() -> {
+                        Region newRegion = new Region();
+                        newRegion.setSido(videoInfo.getSido());
+                        newRegion.setSigungu(videoInfo.getSigungu());
+                        return regionService.save(newRegion);
+                    });
+            videoInfo.setRegion(region);
+
+            Store storeRequest = videoInfo.getStore();
+            storeRequest.setRegion(region);
+            Store savedStore = storeRepository.save(storeRequest);
+            videoInfo.setStore(savedStore);
+
+            videoRepository.save(videoInfo); // 최종 Video 정보 저장
+
+            // --- Job 상태를 COMPLETED로 업데이트 ---
+            Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found"));
             job.setStatus(JobStatus.COMPLETED);
-            job.setResultUrl(finalVideoUrl);
+            job.setResultUrl(videoUrl);
             jobRepository.save(job);
-            log.info("Job ID [{}] - 영상 제작 성공.", jobId);
+            log.info("Job ID [{}] - 영상 제작 및 DB 저장 성공.", jobId);
 
         } catch (Exception e) {
             log.error("Job ID [{}] - 영상 제작 실패", jobId, e);
