@@ -1,6 +1,7 @@
 package hello.livsi_0820.service;
 
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +39,7 @@ public class VideoTaskWorker {
     private final ShortsMaker shortsMaker;
     private final VideoGenerationService videoGenerationService;
     private final ObjectMapper objectMapper;
+    private final AmazonS3 amazonS3;
 
     @Value("${gemini.key}")
     private String GEMINI_API_KEY;
@@ -45,6 +47,8 @@ public class VideoTaskWorker {
     @Value("${gemini.requestText}")
     private String requestText;
 
+    @Value("${aws.s3.bucket}")
+    private String bucketName;
     @Async
     @Transactional
     public void analyze(String jobId, File tempFile, String sigunguEnglish, String voicePack) {
@@ -103,10 +107,19 @@ public class VideoTaskWorker {
                 sceneDataList.add(sceneData);
             }
 
-            videoGenerationService.generateMultiSceneVideo(sigunguEnglish, voicePack, sceneDataList);
+            File finalVideoFile = videoGenerationService.generateMultiSceneVideo(sigunguEnglish, voicePack, sceneDataList);
 
             // 5. 성공 처리
-            String finalVideoUrl = "https://your-s3-bucket.s3.ap-northeast-2.amazonaws.com/videos/" + jobId + ".mp4"; // 최종 결과물 URL
+
+            log.info("Job ID [{}] - 최종 영상을 S3에 업로드 시작...", jobId);
+
+            String s3FileName = "videos/" + jobId + ".mp4";
+
+            amazonS3.putObject(bucketName, s3FileName, finalVideoFile);
+
+            String finalVideoUrl = amazonS3.getUrl(bucketName, s3FileName).toString();
+            log.info("Job ID [{}] - S3 업로드 완료. URL: {}", jobId, finalVideoUrl);
+
             Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
             job.setStatus(JobStatus.COMPLETED);
             job.setResultUrl(finalVideoUrl);

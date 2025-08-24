@@ -35,7 +35,7 @@ public class VideoGenerationService {
     /**
      * 여러 장면을 받아 각각 영상을 생성하고 최종적으로 하나로 합치는 메소드
      */
-    public String generateMultiSceneVideo(String sigunguEnglish, String voicepack, List<SceneData> scenes) throws Exception {
+    public File generateMultiSceneVideo(String sigunguEnglish, String voicepack, List<SceneData> scenes) throws Exception {
         List<String> generatedSceneVideoPaths = new ArrayList<>();
 
         // 임시 폴더 생성
@@ -63,7 +63,7 @@ public class VideoGenerationService {
         clearDirectory(tempDir);
         tempDir.delete();
 
-        return "Successfully generated multi-scene video at: " + finalVideoPath;
+        return new File(finalVideoPath);
     }
 
     public void generateSingleSceneVideo(String sigunguEnglish, String text, String voicepack, String BGVN, String finalVideoPath) throws Exception {
