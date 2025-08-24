@@ -33,7 +33,7 @@ public class VideoController {
     private final JobRepository jobRepository;
     private final ObjectMapper objectMapper;
 
-    @PostMapping(value = "/video-analyze/request", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/video-analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "영상 생성 요청 접수")
     public ResponseEntity<Map<String, String>> requestAnalyze(
             @RequestPart("videoFile") MultipartFile videoFile,

@@ -177,7 +177,6 @@ public class VideoTaskWorker {
         }
     }
 
-    // `uploadFile`과 `waitUntilFileisActive` 메서드 (기존과 동일)
     public String uploadFile(File file) throws IOException, InterruptedException {
         String url = "https://generativelanguage.googleapis.com/upload/v1beta/files?key="
                 +GEMINI_API_KEY;
