@@ -55,7 +55,7 @@ public class VideoTaskWorker {
             String fileId = uploadFile(tempFile);
 
             // 2. Gemini 영상 분석 요청
-            String geminiURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
+            String geminiURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_API_KEY;
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             GeminiReqDto request = GeminiReqDto.createVideoRequest("video/mp4", fileId, requestText);
