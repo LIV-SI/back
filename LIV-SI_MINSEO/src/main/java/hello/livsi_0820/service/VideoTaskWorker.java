@@ -51,35 +51,50 @@ public class VideoTaskWorker {
         try {
             log.info("Job ID [{}] - 실제 비동기 작업 시작...", jobId);
 
+            // 1. Gemini 서버에 임시 업로드
             String fileId = uploadFile(tempFile);
+
+            // 2. Gemini 영상 분석 요청
             String geminiURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-
             GeminiReqDto request = GeminiReqDto.createVideoRequest("video/mp4", fileId, requestText);
+
+            // 디버깅용 요청 본문 로그
+            try {
+                String jsonRequest = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(request);
+                log.info("Job ID [{}] - 실제 전송될 JSON 요청 본문:\n{}", jobId, jsonRequest);
+            } catch (Exception e) {
+                log.error("Job ID [{}] - JSON 변환 중 오류 발생", jobId, e);
+            }
+
             HttpEntity<GeminiReqDto> requestEntity = new HttpEntity<>(request, headers);
             ResponseEntity<GeminiResDto> response = restTemplate.exchange(geminiURL, HttpMethod.POST, requestEntity, GeminiResDto.class);
             log.info("Job ID [{}] - Gemini 응답 수신", jobId);
 
-            String jsonResult = response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+            // 3. Gemini 응답에서 순수 JSON만 추출
+            String rawResponseText = response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+            log.info("========== RAW GEMINI RESPONSE START (Job ID: {}) ==========", jobId);
+            log.info(rawResponseText);
+            log.info("========== RAW GEMINI RESPONSE END (Job ID: {}) ==========", jobId);
 
-            if (jsonResult.startsWith("```")) {
-                jsonResult = jsonResult.substring(jsonResult.indexOf("{"));
+            int startIndex = rawResponseText.indexOf("{");
+            int endIndex = rawResponseText.lastIndexOf("}");
+            if (startIndex == -1 || endIndex == -1 || endIndex < startIndex) {
+                throw new IOException("Gemini 응답에서 유효한 JSON을 찾을 수 없습니다: " + rawResponseText);
             }
-            if (jsonResult.endsWith("```")) {
-                // 여기가 수정된 부분입니다! "str" -> "}"
-                jsonResult = jsonResult.substring(0, jsonResult.lastIndexOf("}") + 1);
-            }
+            String jsonResult = rawResponseText.substring(startIndex, endIndex + 1);
 
+            // 4. 영상 제작 로직 실행
             VideoResult videoResult = objectMapper.readValue(jsonResult, VideoResult.class);
             List<File> clips = shortsMaker.makeShorts(tempFile, videoResult);
             List<String> contents = new ArrayList<>();
-            for (VideoResult.Scene scene : videoResult.getScenes()) {
+            for(VideoResult.Scene scene : videoResult.getScenes()) {
                 contents.add(scene.getContent());
             }
 
             List<SceneData> sceneDataList = new ArrayList<>();
-            for (int i = 0; i < clips.size(); i++) {
+            for(int i=0; i<clips.size(); i++) {
                 SceneData sceneData = new SceneData();
                 sceneData.setBGVN(clips.get(i).getAbsolutePath());
                 sceneData.setText(contents.get(i));
@@ -88,22 +103,24 @@ public class VideoTaskWorker {
 
             videoGenerationService.generateMultiSceneVideo(sigunguEnglish, voicePack, sceneDataList);
 
-            String finalVideoUrl = "https://your-final-video-location/" + jobId + ".mp4";
-
-            Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found"));
+            // 5. 성공 처리
+            String finalVideoUrl = "https://your-s3-bucket.s3.ap-northeast-2.amazonaws.com/videos/" + jobId + ".mp4"; // 최종 결과물 URL
+            Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
             job.setStatus(JobStatus.COMPLETED);
             job.setResultUrl(finalVideoUrl);
             jobRepository.save(job);
-
             log.info("Job ID [{}] - 영상 제작 성공.", jobId);
 
         } catch (Exception e) {
             log.error("Job ID [{}] - 영상 제작 실패", jobId, e);
-            Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found"));
+            // 6. 실패 처리
+            Job job = jobRepository.findById(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
             job.setStatus(JobStatus.FAILED);
+            // (선택) job에 에러 메시지를 저장하는 필드가 있다면 여기에 저장
             jobRepository.save(job);
         } finally {
-            if (tempFile != null) {
+            // 7. 임시 파일 삭제
+            if (tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }
         }
