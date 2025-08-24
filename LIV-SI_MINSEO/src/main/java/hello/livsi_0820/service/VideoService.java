@@ -34,7 +34,7 @@ public class VideoService {
     private final JobRepository jobRepository;
     private final VideoTaskWorker videoTaskWorker;
     private final VideoRepository videoRepository;
-    
+
 
 
     @Transactional
@@ -77,7 +77,6 @@ public class VideoService {
         return videoRepository.findById(id)
                 .map(video -> {
                     video.setTitle(updatedVideo.getTitle());
-                    video.setThumbnailUrl(updatedVideo.getThumbnailUrl());
                     video.setVideoUrl(updatedVideo.getVideoUrl());
                     video.setSido(updatedVideo.getSido());
                     video.setSigungu(updatedVideo.getSigungu());

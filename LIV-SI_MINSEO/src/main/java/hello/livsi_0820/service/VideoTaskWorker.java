@@ -32,8 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import hello.livsi_0820.entity.*;
-import hello.livsi_0820.repository.*;
-import org.springframework.http.*;
 import java.io.FileInputStream;
 
 @Slf4j
@@ -118,6 +116,7 @@ public class VideoTaskWorker {
                 sceneDataList.add(sceneData);
             }
 
+            // 5.생성된 최종 영상 파일을 S3에 업로드
             File finalVideoFile = videoGenerationService.generateMultiSceneVideo(sigunguEnglish, voicePack, sceneDataList);
 
 
@@ -127,13 +126,12 @@ public class VideoTaskWorker {
             metadata.setContentLength(finalVideoFile.length());
             metadata.setContentType("video/mp4");
 
-            // 생성된 최종 영상 파일을 S3에 업로드
+
             amazonS3.putObject(bucketName, fileName, new FileInputStream(finalVideoFile), metadata);
 
             String videoUrl = amazonS3.getUrl(bucketName, fileName).toString();
             videoInfo.setVideoUrl(videoUrl); // 전달받은 videoInfo 객체에 최종 URL 설정
 
-            // --- 이하 기존 saveVideo의 DB 저장 로직과 동일 ---
             Member memberRequest = videoInfo.getMember();
             Member member = memberRepository.findByEmail(memberRequest.getEmail())
                     .orElseGet(() -> memberRepository.save(memberRequest));
@@ -149,9 +147,16 @@ public class VideoTaskWorker {
             videoInfo.setRegion(region);
 
             Store storeRequest = videoInfo.getStore();
-            storeRequest.setRegion(region);
-            Store savedStore = storeRepository.save(storeRequest);
-            videoInfo.setStore(savedStore);
+            // 가게 정보(store)가 JSON에 포함되어 있을 때만 처리하도록 변경
+            if (storeRequest != null && storeRequest.getStoreName() != null) {
+                storeRequest.setRegion(region);
+                Store savedStore = storeRepository.save(storeRequest);
+                videoInfo.setStore(savedStore);
+            } else {
+                // 가게 정보가 없으면 null로 설정
+                videoInfo.setStore(null);
+            }
+
 
             videoRepository.save(videoInfo); // 최종 Video 정보 저장
 
