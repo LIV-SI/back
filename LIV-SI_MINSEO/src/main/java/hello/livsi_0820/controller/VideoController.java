@@ -1,7 +1,10 @@
 package hello.livsi_0820.controller;
 
+import hello.livsi_0820.entity.Job;
 import hello.livsi_0820.entity.Video;
+import hello.livsi_0820.repository.JobRepository;
 import hello.livsi_0820.service.VideoService;
+import hello.livsi_0820.status.JobStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Tag(name = "Video API", description = "영상 생성, 업로드 및 정보 관리를 위한 API")
@@ -24,6 +29,7 @@ import java.util.Optional;
 public class VideoController {
 
     private final VideoService videoService;
+    private final JobRepository jobRepository;
 
     @PostMapping(consumes = {"multipart/form-data"})
     @Operation(summary = "영상 및 메타데이터 업로드", description = "영상 파일(videoFile)과 영상 정보(video)를 multipart/form-data 형식으로 함께 업로드합니다.")
@@ -73,12 +79,44 @@ public class VideoController {
     }
 
 
-    @PostMapping("/video-analyze")
-    @Operation(summary = "영상 생성 요청", description = "영상을 업로드하여 생성, 다음API의 sigunguEnglish값, 남성,여성")
-    public String analyze(@RequestParam MultipartFile video,
-                          @RequestParam String sigunguEnglish, @RequestParam String voicePack) throws Exception {
+    @PostMapping("/video-analyze/")
+    @Operation(summary = "영상 생성 요청 접수", description = "영상 제작을 요청하고 작업 ID를 즉시 반환합니다.")
+    public ResponseEntity<Map<String, String>> requestAnalyze(
+            @RequestParam MultipartFile video,
+            @RequestParam String sigunguEnglish,
+            @RequestParam String voicePack) throws IOException {
 
-        videoService.analyze(video, sigunguEnglish, voicePack);
-        return "ok";
+        String jobId = videoService.requestAnalysis(video, sigunguEnglish, voicePack);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("jobId", jobId);
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @GetMapping("/video-analyze/status/{jobId}")
+    @Operation(summary = "영상 생성 상태 확인")
+    public ResponseEntity<Map<String, Object>> getAnalyzeStatus(@PathVariable String jobId) {
+
+        // DB에서 Job 엔티티를 조회합니다.
+        Optional<Job> optionalJob = jobRepository.findById(jobId);
+
+        if (optionalJob.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Job job = optionalJob.get();
+        Map<String, Object> response = new HashMap<>();
+        response.put("jobId", job.getJobId());
+        response.put("status", job.getStatus());
+        response.put("createdAt", job.getCreatedAt());
+        response.put("updatedAt", job.getUpdatedAt());
+
+        // 작업이 완료되었으면 결과 URL도 함께 전달
+        if (job.getStatus() == JobStatus.COMPLETED) {
+            response.put("resultUrl", job.getResultUrl());
+        }
+
+        return ResponseEntity.ok(response);
     }
 }

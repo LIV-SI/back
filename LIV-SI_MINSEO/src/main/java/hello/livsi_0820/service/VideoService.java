@@ -1,15 +1,13 @@
 package hello.livsi_0820.service;
 
-//import com.amazonaws.HttpMethod;
+import hello.livsi_0820.entity.*;
+import hello.livsi_0820.repository.JobRepository;
+import hello.livsi_0820.status.JobStatus;
 import org.springframework.http.HttpMethod;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import hello.livsi_0820.ShortsMaker;
-import hello.livsi_0820.entity.Member;
-import hello.livsi_0820.entity.Region;
-import hello.livsi_0820.entity.Store;
-import hello.livsi_0820.entity.Video;
 import hello.livsi_0820.repository.MemberRepository;
 import hello.livsi_0820.repository.StoreRepository;
 import hello.livsi_0820.repository.VideoRepository;
@@ -25,6 +23,7 @@ import hello.livsi_0820.response.VideoResult;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.http.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +49,7 @@ public class VideoService {
     private final VideoRepository videoRepository;
     private final RegionService regionService;
     private final AmazonS3 amazonS3;
+    private final JobRepository jobRepository;
 
     @Value("${gemini.key}")
     String GEMINI_API_KEY;
@@ -71,8 +71,29 @@ public class VideoService {
 //    }
 
     ObjectMapper objectMapper = new ObjectMapper();
+    private VideoTaskWorker videoTaskWorker;
 
+    @Transactional
+    public String requestAnalysis(MultipartFile video, String sigunguEnglish, String voicePack) throws IOException {
+        String jobId = UUID.randomUUID().toString();
 
+        File tempFile = File.createTempFile("upload-", video.getOriginalFilename());
+        video.transferTo(tempFile);
+
+        Job newJob = Job.builder()
+                .jobId(jobId)
+                .status(JobStatus.PROCESSING)
+                .build();
+        jobRepository.save(newJob);
+
+        // 비서(Proxy)를 통해 Worker의 메서드를 호출하므로 @Async가 정상 작동함
+        videoTaskWorker.analyze(jobId, tempFile, sigunguEnglish, voicePack);
+
+        return jobId;
+    }
+
+    @Async
+    @Transactional
     public void analyze(MultipartFile video, String sigunguEnglish, String voicePack) throws Exception {
         // api 요청용 토큰
 //        String accessToken = getAccessToken(serviceAccountPath);
