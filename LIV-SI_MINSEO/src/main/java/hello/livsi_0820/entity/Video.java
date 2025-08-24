@@ -18,7 +18,7 @@ public class Video {
     @Column(name = "video_id")
     private Long videoId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = true, length = 100)
     private String title;
 
     @Column(nullable = true, length = 200)

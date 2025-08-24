@@ -17,7 +17,7 @@ public class Member {
     @Column(name = "member_id")
     private Long memberId;
 
-    @Column(nullable = false, length = 40)
+    @Column(nullable = true, length = 40)
     private String password;
 
     @Column(name = "member_name", nullable = true, length = 10)
