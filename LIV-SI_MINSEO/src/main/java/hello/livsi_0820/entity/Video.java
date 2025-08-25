@@ -1,5 +1,6 @@
 package hello.livsi_0820.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,6 +41,7 @@ public class Video {
 
     @ManyToOne
     @JoinColumn(name = "member_id", nullable = true)
+    @JsonBackReference
     private Member member;
 
     @ManyToOne
