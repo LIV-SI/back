@@ -93,4 +93,8 @@ public class VideoService {
     public void deleteVideo(Long id) {
         videoRepository.deleteById(id);
     }
+
+    public Optional<Video> save(Video video) {
+        return Optional.of(videoRepository.save(video));
+    }
 }
