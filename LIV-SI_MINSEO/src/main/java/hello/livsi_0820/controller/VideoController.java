@@ -1,5 +1,6 @@
 package hello.livsi_0820.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import hello.livsi_0820.entity.Job;
 import hello.livsi_0820.entity.Video;
 import hello.livsi_0820.repository.JobRepository;
@@ -109,5 +110,12 @@ public class VideoController {
         videoService.deleteVideo(id);
         return "Video with id " + id + " deleted successfully.";
     }
+
+    @PostMapping
+    public Optional<Video> uploadVideo(@RequestParam String videoData) throws JsonProcessingException {
+        Video video = objectMapper.readValue(videoData, Video.class);
+        return videoService.save(video);
+    }
+
 
 }
