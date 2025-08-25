@@ -1,6 +1,6 @@
 package hello.livsi_0820.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+
 import hello.livsi_0820.entity.Job;
 import hello.livsi_0820.entity.Video;
 import hello.livsi_0820.repository.JobRepository;

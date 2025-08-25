@@ -1,31 +1,26 @@
 package hello.livsi_0820.service;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GeneratePresignedUrlRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
 import hello.livsi_0820.entity.Job;
-import hello.livsi_0820.entity.Member;
-import hello.livsi_0820.entity.Region;
-import hello.livsi_0820.entity.Store;
+import com.amazonaws.services.s3.AmazonS3;
 import hello.livsi_0820.entity.Video;
 import hello.livsi_0820.repository.JobRepository;
-import hello.livsi_0820.repository.MemberRepository;
-import hello.livsi_0820.repository.StoreRepository;
 import hello.livsi_0820.repository.VideoRepository;
 import hello.livsi_0820.status.JobStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.net.URL;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VideoService {
@@ -34,6 +29,10 @@ public class VideoService {
     private final JobRepository jobRepository;
     private final VideoTaskWorker videoTaskWorker;
     private final VideoRepository videoRepository;
+    private final AmazonS3 amazonS3;
+
+    @Value("${aws.s3.bucket}")
+    private String bucketName;
 
 
 
@@ -90,8 +89,33 @@ public class VideoService {
                 });
     }
 
-    public void deleteVideo(Long id) {
-        videoRepository.deleteById(id);
+    @Transactional
+    public void deleteVideo(Long videoId) {
+        // 1. DB에서 비디오 정보를 조회합니다.
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 비디오를 찾을 수 없습니다. id=" + videoId));
+
+        String videoUrl = video.getVideoUrl();
+
+        // 2. S3에서 실제 파일을 삭제합니다.
+        if (videoUrl != null && !videoUrl.isEmpty()) {
+            try {
+                String fileKey = extractFileKeyFromUrl(videoUrl);
+                amazonS3.deleteObject(bucketName, fileKey);
+                log.info("S3 파일 삭제 성공: {}", fileKey);
+            } catch (Exception e) {
+                log.error("S3 파일 삭제 실패: {}", videoUrl, e);
+                throw new RuntimeException("S3 파일 삭제 중 오류가 발생했습니다.");
+            }
+        }
+
+        // 3. DB에서 비디오 정보를 최종적으로 삭제합니다.
+        videoRepository.delete(video);
+    }
+
+    private String extractFileKeyFromUrl(String urlString) throws Exception {
+        URL url = new URL(urlString);
+        return url.getPath().substring(1);
     }
 
     public Optional<Video> save(Video video) {
