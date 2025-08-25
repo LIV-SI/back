@@ -10,7 +10,7 @@ public class CORSConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // "/**"는 모든 경로에 대해 CORS 설정을 적용한다는 의미입니다.
-                .allowedOrigins("http://localhost:5173/", "https://livsi.vercel.app/") //  허용할 프론트엔드 Origin(주소)을 명시합니다.
+                .allowedOrigins("http://localhost:5173/", "https://livsi.vercel.app/","https://www.livsi.vercel.app/") //  허용할 프론트엔드 Origin(주소)을 명시합니다.
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS") // 허용할 HTTP 메소드를 지정합니다.
                 .allowedHeaders("*") // 허용할 요청 헤더를 지정합니다. "*"는 모든 헤더를 허용합니다.
                 .allowCredentials(true) // 쿠키 등 자격 증명 정보를 포함한 요청을 허용합니다.
