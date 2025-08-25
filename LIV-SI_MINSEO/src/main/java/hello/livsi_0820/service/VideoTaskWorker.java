@@ -58,7 +58,7 @@ public class VideoTaskWorker {
 
     @Value("${aws.s3.bucket}")
     private String bucketName;
-    @Async
+    @Async("videoProcessingExecutor")
     @Transactional
     public void analyze(String jobId, File tempFile,  Video videoInfo,String sigunguEnglish, String voicePack) {
         try {

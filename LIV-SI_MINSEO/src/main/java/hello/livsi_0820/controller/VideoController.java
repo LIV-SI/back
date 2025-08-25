@@ -110,12 +110,4 @@ public class VideoController {
         videoService.deleteVideo(id);
         return "Video with id " + id + " deleted successfully.";
     }
-
-    @PostMapping
-    public Optional<Video> uploadVideo(@RequestParam String videoData) throws JsonProcessingException {
-        Video video = objectMapper.readValue(videoData, Video.class);
-        return videoService.save(video);
-    }
-
-
 }
